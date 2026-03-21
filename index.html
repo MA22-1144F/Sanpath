@@ -35,7 +35,7 @@ body{font-family:'Helvetica Neue',Helvetica,sans-serif;background:var(--bg);colo
 .cb.stop{border-color:#c44;color:#c44;display:none}
 .cb.icon{width:40px;padding:0;font-size:15px;flex-shrink:0}
 .cb.icon.von{border-color:var(--g);color:var(--g)}
-#tiles{display:flex;justify-content:center;gap:3px;padding:4px 8px}
+#tiles,.tiles-row{display:flex;justify-content:center;gap:3px;padding:4px 8px}
 .tb{font-size:8px;font-weight:700;letter-spacing:.1em;padding:3px 8px;border:1px solid transparent;border-radius:2px;background:transparent;color:var(--dm);cursor:pointer;text-transform:uppercase}
 .tb.on{color:var(--g);border-color:var(--bd)}
 #b-c{position:absolute;right:10px;z-index:810;width:36px;height:36px;border-radius:4px;border:1px solid var(--bd);background:rgba(17,17,17,.85);color:var(--dm);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;pointer-events:auto}
@@ -85,8 +85,8 @@ body{font-family:'Helvetica Neue',Helvetica,sans-serif;background:var(--bg);colo
 
 /* ── マップ閲覧バー (SHOW ON MAP モード) ── */
 #map-hist-bar{position:absolute;bottom:0;left:0;right:0;z-index:900;background:var(--c1);border-top:1px solid #222;padding-bottom:calc(max(env(safe-area-inset-bottom,4px),4px) + 2px);display:none}
-#map-hist-inner{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;gap:8px}
-#map-hist-info{font-size:10px;color:var(--dm);letter-spacing:.05em;font-weight:600;flex:1;text-align:center}
+#map-hist-ctrl{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 12px}
+#map-hist-info{font-size:10px;color:var(--dm);letter-spacing:.05em;font-weight:600;flex:1;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
 </head>
 <body>
@@ -128,10 +128,17 @@ body{font-family:'Helvetica Neue',Helvetica,sans-serif;background:var(--bg);colo
 
 <!-- ── マップ閲覧バー: SHOW ON MAP モード時のみ表示 ── -->
 <div id="map-hist-bar">
-  <div id="map-hist-inner">
-    <button class="cb" id="map-hist-back-btn" style="flex-shrink:0">← LOG一覧</button>
+  <div id="map-hist-ctrl">
+    <button class="cb" id="map-hist-back-btn" style="flex-shrink:0;padding:0 12px">← LOG</button>
     <span id="map-hist-info"></span>
-    <button class="cb icon" id="map-hist-hm-btn" title="speed heatmap" style="flex-shrink:0">~</button>
+    <button class="cb icon" id="map-hist-hm-btn" title="speed heatmap">~</button>
+    <button class="cb icon" id="map-hist-log-btn" title="log">&equiv;</button>
+  </div>
+  <div class="tiles-row">
+    <div class="tb on" data-t="std">STD</div>
+    <div class="tb" data-t="dark">DARK</div>
+    <div class="tb" data-t="sat">SAT</div>
+    <div class="tb" data-t="pale">PALE</div>
   </div>
 </div>
 
@@ -553,21 +560,24 @@ function drawMapHistRoute(r,useHm){
   else if(ll.length===1)A.map.setView(ll[0],17);
 }
 
-// SHOW ON MAP モード開始
+// SHOW ON MAP モード開始（詳細ビューから・≡経由のLOG一覧からの両方に対応）
 function showRouteOnMainMap(r){
+  const wasAlreadyInMapHistMode=A.mapHistMode;
   A.mapHistMode=true;
   A.mapHistId=r.id;
-  A.mapHistHm=HD.hm; // 詳細ビューのヒートマップ状態を引き継ぐ
-  // 履歴パネルを閉じる（bar は非表示のまま）
+  // 詳細ビューから新規に入る場合のみ、ミニマップのヒートマップ状態を引き継ぐ
+  // ≡経由でLOG一覧から別の回に切り替える場合は現在のA.mapHistHmを維持
+  if(!wasAlreadyInMapHistMode) A.mapHistHm=HD.hm;
+  // 履歴パネルを閉じる（#bar は非表示のまま）
   $('hist').classList.remove('open');
-  // 詳細ビューもリセット
+  // 詳細ビューをリセット（ミニマップの破棄）
   $('hist-det').classList.remove('open');
   if(HD.map){setTimeout(()=>{if(HD.map){HD.map.remove();HD.map=null;HD.segs=[];HD.routeLayer=null;}},300);}
-  // 経路を描画
+  // 経路を描画（切り替え時は前の経路を消去してから描画）
   drawMapHistRoute(r,A.mapHistHm);
-  // ヒートマップボタン状態を同期
+  // ボタン状態を同期
   $('map-hist-hm-btn').classList.toggle('von',A.mapHistHm);
-  // 情報表示
+  // 情報ラベル
   $('map-hist-info').textContent=`${r.date} · ${r.dist}m`;
   // マップ閲覧バーを表示（#bar は引き続き非表示）
   $('map-hist-bar').style.display='';
@@ -724,8 +734,9 @@ $('hd-showmap').onclick=function(){
 };
 
 // マップ閲覧バーのイベント
-// ← LOG一覧: メインマップ閲覧モード終了 → LOG一覧へ
+// ← LOG: メインマップ閲覧モード終了 → LOG一覧へ
 $('map-hist-back-btn').onclick=exitMapHistMode;
+
 // ヒートマップトグル (マップ閲覧モード中)
 $('map-hist-hm-btn').onclick=function(){
   const r=H.load().find(x=>x.id===A.mapHistId);
@@ -734,6 +745,17 @@ $('map-hist-hm-btn').onclick=function(){
   A.mapHistHm=!A.mapHistHm;
   this.classList.toggle('von',A.mapHistHm);
   drawMapHistRoute(r,A.mapHistHm);
+};
+
+// ≡ ボタン (マップ閲覧モード中): LOG一覧を開く
+// 経路はマップ上に残し、ヒストパネルを手前に表示
+// 別の回の「SHOW ON MAP」を選択すれば切り替え可能
+// × で完全終了（通常の地図画面へ）
+$('map-hist-log-btn').onclick=function(){
+  $('map-hist-bar').style.display='none'; // バーを隠してLOG一覧をフルスクリーンに
+  H.render();
+  $('hist').classList.add('open');
+  // #bar は非表示のまま維持（mapHistMode=true が closeHist で検知される）
 };
 
 boot();
