@@ -12,18 +12,19 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://unpkg.com/@capacitor/core@latest/dist/capacitor.js"></script>
 <style>
-:root{--g:#4ade80;--bg:#111;--c1:#1a1a1a;--c2:#222;--bd:#333;--tx:#ddd;--dm:#666;--fg:#fff}
+:root{--g:#4ade80;--bg:#111;--c1:#1a1a1a;--c2:#222;--bd:#333;--tx:#ddd;--dm:#666;--fg:#fff;--sat:0px}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{font-family:'Helvetica Neue',Helvetica,sans-serif;background:var(--bg);color:var(--tx);height:100dvh;width:100vw;overflow:hidden}
 #map{position:absolute;inset:0;z-index:1}
-#hud{position:absolute;top:0;left:0;right:0;z-index:800;pointer-events:none;padding-top:max(env(safe-area-inset-top,6px),6px);text-align:center;opacity:0;transition:opacity .3s}
+#hud{position:absolute;top:0;left:0;right:0;z-index:800;pointer-events:none;padding-top:var(--sat);text-align:center;opacity:0;transition:opacity .3s}
 #hud.on{opacity:1}
 #h-dir{font-size:36px;font-weight:200;letter-spacing:.05em;color:var(--fg);line-height:1}
 #h-sub{font-size:11px;color:var(--dm);margin-top:2px;font-weight:500;letter-spacing:.08em}
-#gps{position:absolute;top:max(env(safe-area-inset-top,4px),4px);right:8px;z-index:810;font-size:9px;font-weight:600;color:var(--dm);letter-spacing:.05em;display:none;pointer-events:none}
+#gps{position:absolute;top:var(--sat);right:8px;z-index:810;font-size:9px;font-weight:600;color:var(--dm);letter-spacing:.05em;display:none;pointer-events:none}
 #gps-dot{width:5px;height:5px;border-radius:50%;display:inline-block;vertical-align:middle;margin-right:3px}
-#bgb{position:absolute;top:max(env(safe-area-inset-top,4px),4px);left:8px;z-index:810;font-size:8px;font-weight:600;color:var(--g);letter-spacing:.06em;display:none;pointer-events:none}
+#bgb{position:absolute;top:var(--sat);left:8px;z-index:810;font-size:8px;font-weight:600;color:var(--g);letter-spacing:.06em;display:none;pointer-events:none}
 #toast{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1500;background:#000;border:1px solid var(--bd);padding:10px 24px;border-radius:4px;font-size:12px;font-weight:500;letter-spacing:.04em;color:var(--tx);opacity:0;pointer-events:none;transition:opacity .25s;white-space:nowrap}
 #toast.show{opacity:.9}
 #bar{position:absolute;bottom:0;left:0;right:0;z-index:900;background:var(--c1);border-top:1px solid #222;padding-bottom:calc(max(env(safe-area-inset-bottom,4px),4px) + 2px)}
@@ -47,7 +48,7 @@ body{font-family:'Helvetica Neue',Helvetica,sans-serif;background:var(--bg);colo
 #hist-list{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
 #hist-det{position:absolute;inset:0;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;transform:translateX(100%);transition:transform .25s}
 #hist-det.open{transform:translateX(0)}
-.hh{position:sticky;top:0;background:var(--bg);padding:14px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;z-index:10}
+.hh{position:sticky;top:0;background:var(--bg);padding:14px 16px;padding-top:calc(var(--sat) + 14px);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;z-index:10}
 .hh-t{font-size:14px;font-weight:600;letter-spacing:.06em}
 .hh-x{font-size:18px;color:var(--dm);cursor:pointer;padding:4px 8px}
 .hh-back{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--g);cursor:pointer;padding:4px 0;min-width:60px}
@@ -77,6 +78,9 @@ body{font-family:'Helvetica Neue',Helvetica,sans-serif;background:var(--bg);colo
 #hd-memo{width:calc(100% - 20px);margin:0 10px 16px;background:var(--c2);border:1px solid var(--bd);border-radius:2px;padding:6px 8px;color:var(--tx);font-size:10px;font-family:inherit;resize:vertical;min-height:32px;display:block}
 #hd-memo::placeholder{color:var(--dm)}
 
+/* ── Elevation & pace profiles ── */
+#hd-prof,#hd-pace{background:var(--c2);border:1px solid var(--bd);border-radius:2px}
+
 /* ── Loading ── */
 #ld{position:absolute;inset:0;z-index:2000;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;transition:opacity .4s}
 #ld.gone{opacity:0;pointer-events:none}
@@ -88,6 +92,7 @@ body{font-family:'Helvetica Neue',Helvetica,sans-serif;background:var(--bg);colo
 .lb2{font-size:10px;letter-spacing:.06em;padding:6px 18px;border:1px solid var(--bd);border-radius:2px;background:transparent;color:var(--dm);cursor:pointer;margin-top:6px}
 #tap{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:810;pointer-events:none;display:none;font-size:11px;color:var(--dm);letter-spacing:.1em;border:1px solid var(--bd);padding:8px 16px;border-radius:2px;background:rgba(0,0,0,.8)}
 .leaflet-control-attribution{font-size:7px!important;opacity:.5}
+.leaflet-top{margin-top:var(--sat)!important}
 .jn{width:12px;height:12px;border-radius:50%;background:var(--g);border:2px solid var(--fg);box-shadow:0 0 6px rgba(74,222,128,.4)}
 
 /* ── マップ閲覧バー (SHOW ON MAP モード) ── */
@@ -133,8 +138,14 @@ body{font-family:'Helvetica Neue',Helvetica,sans-serif;background:var(--bg);colo
     <div id="hd-info"></div>
     <div id="hd-ctrl">
       <button class="cb icon" id="hd-hm" title="speed heatmap">~</button>
+      <button class="cb icon" id="hd-ahm" title="alt heatmap">&#9650;</button>
       <button class="cb" id="hd-showmap">SHOW ON MAP</button>
+      <button class="cb" id="hd-csv">CSV</button>
     </div>
+    <canvas id="hd-pace" width="600" height="140" style="width:calc(100% - 20px);height:100px;margin:0 10px 2px;display:none"></canvas>
+    <div id="hd-pace-label" style="display:none;padding:0 10px 6px;font-size:8px;color:var(--dm);letter-spacing:.06em;justify-content:space-between"><span id="hd-pace-l"></span><span id="hd-pace-r"></span></div>
+    <canvas id="hd-prof" width="600" height="140" style="width:calc(100% - 20px);height:100px;margin:0 10px 2px;display:none"></canvas>
+    <div id="hd-prof-label" style="display:none;padding:0 10px 6px;font-size:8px;color:var(--dm);letter-spacing:.06em;justify-content:space-between"><span id="hd-prof-l"></span><span id="hd-prof-r"></span></div>
     <textarea id="hd-memo" placeholder="memo"></textarea>
   </div>
 </div>
@@ -144,6 +155,7 @@ body{font-family:'Helvetica Neue',Helvetica,sans-serif;background:var(--bg);colo
   <div id="map-hist-ctrl">
     <span id="map-hist-info"></span>
     <button class="cb icon" id="map-hist-hm-btn" title="speed heatmap">~</button>
+    <button class="cb icon" id="map-hist-ahm-btn" title="alt heatmap">&#9650;</button>
     <button class="cb icon" id="map-hist-log-btn" title="log">&equiv;</button>
   </div>
   <div class="tiles-row">
@@ -160,6 +172,7 @@ body{font-family:'Helvetica Neue',Helvetica,sans-serif;background:var(--bg);colo
     <div class="st"><div class="st-v" id="s-t">0:00</div><div class="st-l">TIME</div></div>
     <div class="st"><div class="st-v" id="s-j">0</div><div class="st-l">JCT</div></div>
     <div class="st"><div class="st-v" id="s-sp">-</div><div class="st-l">KM/H</div></div>
+    <div class="st"><div class="st-v" id="s-al">-</div><div class="st-l">ALT</div></div>
   </div>
   <div id="ctrl">
     <button class="cb icon" id="b-v" title="voice">V</button>
@@ -167,6 +180,7 @@ body{font-family:'Helvetica Neue',Helvetica,sans-serif;background:var(--bg);colo
     <button class="cb" id="b-w">+ REC</button>
     <button class="cb stop" id="b-s">STOP</button>
     <button class="cb icon" id="b-sc" title="speed color">~</button>
+    <button class="cb icon" id="b-ac" title="alt color">&#9650;</button>
     <button class="cb icon" id="b-h" title="log">&equiv;</button>
   </div>
   <div id="tiles">
@@ -178,6 +192,13 @@ body{font-family:'Helvetica Neue',Helvetica,sans-serif;background:var(--bg);colo
 </div>
 
 <script>
+// ── Capacitor Native Detection ──
+let BGL=null,bglWatcherId=null;
+const isNative=(typeof Capacitor!=='undefined'&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform());
+if(isNative){try{BGL=Capacitor.registerPlugin('BackgroundGeolocation')}catch(e){console.warn('BGL plugin not found',e)}}
+// ステータスバー分のバッファを設定 (Android: 48px, Web: 0)
+document.documentElement.style.setProperty('--sat',isNative?'48px':'0px');
+
 const{sin,cos,atan2,sqrt,PI,floor,round,min,max,random:rnd}=Math,toR=d=>d*PI/180,$=id=>document.getElementById(id);
 function hav(a1,o1,a2,o2){const R=6371e3,dA=toR(a2-a1),dO=toR(o2-o1),a=sin(dA/2)**2+cos(toR(a1))*cos(toR(a2))*sin(dO/2)**2;return R*2*atan2(sqrt(a),sqrt(1-a))}
 function bear(a1,o1,a2,o2){const dO=toR(o2-o1);return(atan2(sin(dO)*cos(toR(a2)),cos(toR(a1))*sin(toR(a2))-sin(toR(a1))*cos(toR(a2))*cos(dO))*180/PI+360)%360}
@@ -186,9 +207,44 @@ function bD(b){const i=round(b/45)%8;return{a:AR[i],n:DA[i],i}}
 function d2p(lat,lon,co){if(!co||co.length<2)return 1e9;let m=1e9;for(let i=0;i<co.length-1;i++){const a=co[i],b=co[i+1],dx=b.lat-a.lat,dy=b.lon-a.lon,l2=dx*dx+dy*dy;let t=l2?((lat-a.lat)*dx+(lon-a.lon)*dy)/l2:0;t=max(0,min(1,t));m=min(m,hav(lat,lon,a.lat+t*dx,a.lon+t*dy))}return m}
 function fT(s){return`${floor(s/60)}:${(s%60).toString().padStart(2,'0')}`}
 function toast(m){const e=$('toast');e.textContent=m;e.classList.add('show');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('show'),2500)}
+// ファイルダウンロード/共有 (Capacitor WebView対応)
+async function shareFile(blob,filename){
+  // 方式1: Capacitor Filesystem + Share (ネイティブ)
+  if(isNative&&typeof Capacitor!=='undefined'&&Capacitor.Plugins){
+    try{
+      const Fs=Capacitor.Plugins.Filesystem;
+      const Sh=Capacitor.Plugins.Share;
+      if(Fs&&Sh){
+        const reader=new FileReader();
+        const b64=await new Promise((ok,ng)=>{reader.onload=()=>ok(reader.result.split(',')[1]);reader.onerror=ng;reader.readAsDataURL(blob)});
+        const r=await Fs.writeFile({path:filename,data:b64,directory:'CACHE',recursive:true});
+        await Sh.share({title:filename,url:r.uri});
+        return;
+      }
+    }catch(e){console.warn('Native share failed',e)}
+  }
+  // 方式2: Data URI + <a download>
+  try{
+    const reader=new FileReader();
+    const dataUri=await new Promise((ok,ng)=>{reader.onload=()=>ok(reader.result);reader.onerror=ng;reader.readAsDataURL(blob)});
+    const a=document.createElement('a');
+    a.href=dataUri;a.download=filename;
+    document.body.appendChild(a);a.click();
+    document.body.removeChild(a);
+    return;
+  }catch(e){console.warn('Data URI failed',e)}
+  // 方式3: Blob URL fallback
+  const url=URL.createObjectURL(blob);
+  window.open(url,'_blank');
+  setTimeout(()=>URL.revokeObjectURL(url),5000);
+}
+// GPS callback helper (includes altitude)
+function gpsC(p){onPos(p.coords.latitude,p.coords.longitude,p.coords.accuracy,p.coords.altitude)}
 
-// 速度→色: 0km/h=青 → 4km/h=緑 → 8+km/h=赤
-function spd2col(kmh){const t=min(kmh/8,1);if(t<.5){const r=floor(t*2*255),g=255,b=floor((1-t*2)*200);return`rgb(${r},${g},${b})`}const r=255,g=floor((1-(t-.5)*2)*255);return`rgb(${r},${g},0)`}
+// 速度→色: HSLグラデーション 青(0)→緑(4)→黄(6)→赤(8+ km/h)
+function spd2col(kmh){const t=min(max(kmh,0),8)/8;const h=240-t*240;return`hsl(${round(h)},85%,55%)`}
+// 標高→色: HSLグラデーション 青(低)→緑(中)→赤(高) 相対スケール
+function alt2col(alt,mn,mx){const r=mx-mn;if(r<1)return'hsl(120,85%,55%)';const t=min(max((alt-mn)/r,0),1);return`hsl(${round(240-t*240)},85%,55%)`}
 
 // ── Voice ──
 const V={on:false,m:'off',sy:window.speechSynthesis,jv:null,ev:null,ctx:null,
@@ -213,24 +269,22 @@ document.addEventListener('visibilitychange',this._vc=async()=>{
     if(this.ctx?.state==='suspended')this.ctx.resume();
     if(this.au?.paused)try{await this.au.play()}catch(e){}
     // フォアグラウンド復帰時: watcherを再アタッチして即座に位置取得
-    if(A.wid!==null){
+    if(!isNative&&A.wid!==null){
       navigator.geolocation.clearWatch(A.wid);
-      A.wid=navigator.geolocation.watchPosition(p=>onPos(p.coords.latitude,p.coords.longitude,p.coords.accuracy),()=>{},{enableHighAccuracy:true,maximumAge:1000,timeout:10000});
+      A.wid=navigator.geolocation.watchPosition(gpsC,()=>{},{enableHighAccuracy:true,maximumAge:1000,timeout:10000});
     }
     // 即時位置取得でギャップを埋める
-    navigator.geolocation.getCurrentPosition(
-      p=>onPos(p.coords.latitude,p.coords.longitude,p.coords.accuracy),
-      ()=>{},{enableHighAccuracy:true,maximumAge:0,timeout:8000});
+    if(!isNative)navigator.geolocation.getCurrentPosition(gpsC,()=>{},{enableHighAccuracy:true,maximumAge:0,timeout:8000});
   } else if(document.visibilityState==='hidden'&&this.active){
-    navigator.geolocation.getCurrentPosition(
-      p=>onPos(p.coords.latitude,p.coords.longitude,p.coords.accuracy),
-      ()=>{},{enableHighAccuracy:true,maximumAge:0,timeout:8000});
+    if(!isNative)navigator.geolocation.getCurrentPosition(gpsC,()=>{},{enableHighAccuracy:true,maximumAge:0,timeout:8000});
   }
 });
 try{this.ctx=new(window.AudioContext||window.webkitAudioContext)();this.osc=this.ctx.createOscillator();this.osc.frequency.value=1;const g=this.ctx.createGain();g.gain.value=.01;const sd=this.ctx.createMediaStreamDestination();this.osc.connect(g);g.connect(sd);const sg=this.ctx.createGain();sg.gain.value=.001;this.osc.connect(sg);sg.connect(this.ctx.destination);this.osc.start();this.au=document.createElement('audio');this.au.srcObject=sd.stream;this.au.loop=true;this.au.volume=.01;await this.au.play()}catch(e){}
-// GPS polling: 2s主・8sバックアップ
-this.gpsFast=setInterval(()=>{if(!this.active)return;navigator.geolocation.getCurrentPosition(p=>onPos(p.coords.latitude,p.coords.longitude,p.coords.accuracy),()=>{},{enableHighAccuracy:true,maximumAge:0,timeout:5000})},2000);
-this.gps=setInterval(()=>{if(!this.active)return;navigator.geolocation.getCurrentPosition(p=>onPos(p.coords.latitude,p.coords.longitude,p.coords.accuracy),()=>{},{enableHighAccuracy:true,maximumAge:3000,timeout:8000})},8000);
+// GPS polling: Web版のみ
+if(!isNative){
+this.gpsFast=setInterval(()=>{if(!this.active)return;navigator.geolocation.getCurrentPosition(gpsC,()=>{},{enableHighAccuracy:true,maximumAge:0,timeout:5000})},2000);
+this.gps=setInterval(()=>{if(!this.active)return;navigator.geolocation.getCurrentPosition(gpsC,()=>{},{enableHighAccuracy:true,maximumAge:3000,timeout:8000})},8000);
+}
 if('mediaSession' in navigator){navigator.mediaSession.metadata=new MediaMetadata({title:'Sanpath',artist:'walking...'});try{navigator.mediaSession.setActionHandler('pause',()=>{navigator.mediaSession.playbackState='playing'})}catch(e){}}
 if('Notification' in window){if(Notification.permission==='default')try{this.notif=(await Notification.requestPermission())==='granted'}catch(e){}else this.notif=Notification.permission==='granted'}},
 release(){this.active=false;if(this.gps){clearInterval(this.gps);this.gps=null}if(this.gpsFast){clearInterval(this.gpsFast);this.gpsFast=null}
@@ -249,6 +303,13 @@ upd(lat,lon,a,ts){a=max(a,3);if(this.v<0){this.lat=lat;this.lon=lon;this.v=a*a;t
 class SD{constructor(){this.b=[];this.mx=15}add(lat,lon,t){this.b.push({lat,lon,t});if(this.b.length>this.mx)this.b.shift()}
 mov(){if(this.b.length<4)return false;const f=this.b[0],l=this.b[this.b.length-1],d=hav(f.lat,f.lon,l.lat,l.lon),dt=(l.t-f.t)/1000;return dt>2&&d/dt>.8&&d>5}}
 
+// ── Altitude filter (Kalman) ──
+class AF{constructor(){this.a=null;this.v=-1}
+upd(raw,acc){if(raw==null)return this.a;const aa=acc?acc*2.5:30;if(this.v<0){this.a=raw;this.v=aa*aa;return this.a}this.v+=0.5;const K=this.v/(this.v+aa*aa);this.a+=K*(raw-this.a);this.v*=(1-K);return this.a}}
+// ── Elevation gain/loss (dead band) ──
+class EG{constructor(db=3){this.db=db;this.ref=null;this.gain=0;this.loss=0}
+upd(a){if(a==null)return;if(this.ref==null){this.ref=a;return}const d=a-this.ref;if(d>this.db){this.gain+=d;this.ref=a}else if(d<-this.db){this.loss+=Math.abs(d);this.ref=a}}}
+
 // ── Road graph ──
 class G{constructor(){this.N=new Map;this.A=new Map;this.WN=new Map;this.NW=new Map;this.IX=new Set;this.S=[]}
 load(d){for(const e of d.elements||[])if(e.type==='node')this.N.set(e.id,{lat:e.lat,lon:e.lon});
@@ -258,15 +319,65 @@ const vi=new Set;for(const si of this.IX){const sn=this.N.get(si);if(!sn)continu
 near(lat,lon){let b=null,bd=1e9;for(const n of this.IX){const nd=this.N.get(n);if(!nd)continue;const d=hav(lat,lon,nd.lat,nd.lon);if(d<bd){bd=d;b=n}}return b}
 from(id){return this.S.filter(s=>s.f===id||s.t===id).map(s=>s.t===id?{f:s.t,t:s.f,co:[...s.co].reverse(),d:s.d}:s)}}
 
-// ── 履歴 ──
-const H={K:'osp_h',
-load(){try{return JSON.parse(localStorage.getItem(this.K))||[]}catch(e){return[]}},
-save(a){try{localStorage.setItem(this.K,JSON.stringify(a))}catch(e){}},
-add(r){const a=this.load();a.unshift(r);if(a.length>50)a.length=50;this.save(a)},
-del(id){this.save(this.load().filter(r=>r.id!==id))},
-memo(id,t){const a=this.load(),r=a.find(x=>x.id===id);if(r){r.memo=t;this.save(a)}},
-render(){
-  const a=this.load(),el=$('hl');
+// ── 履歴 (IndexedDB) ──
+const H={db:null,
+async init(){
+  return new Promise((ok,ng)=>{
+    const req=indexedDB.open('sanpath',1);
+    req.onupgradeneeded=e=>{e.target.result.createObjectStore('walks',{keyPath:'id'})};
+    req.onsuccess=e=>{H.db=e.target.result;ok()};
+    req.onerror=e=>ng(e);
+  });
+},
+async migrate(){
+  // localStorage→IndexedDB マイグレーション（初回のみ）
+  try{
+    const old=localStorage.getItem('osp_h');
+    if(old){
+      const records=JSON.parse(old);
+      for(const r of records)await this.add(r);
+      localStorage.removeItem('osp_h');
+      console.log('Migrated',records.length,'records to IndexedDB');
+    }
+  }catch(e){console.warn('Migration failed',e)}
+},
+async load(){
+  return new Promise((ok)=>{
+    const tx=H.db.transaction('walks','readonly');
+    const req=tx.objectStore('walks').getAll();
+    req.onsuccess=()=>ok((req.result||[]).sort((a,b)=>String(b.id).localeCompare(String(a.id))));
+    req.onerror=()=>ok([]);
+  });
+},
+async add(r){
+  return new Promise((ok,ng)=>{
+    const tx=H.db.transaction('walks','readwrite');
+    tx.objectStore('walks').put(r);
+    tx.oncomplete=()=>ok();
+    tx.onerror=e=>{toast('DB ERROR');ng(e)};
+  });
+},
+async del(id){
+  return new Promise((ok)=>{
+    const tx=H.db.transaction('walks','readwrite');
+    tx.objectStore('walks').delete(id);
+    tx.oncomplete=()=>ok();
+  });
+},
+async memo(id,t){
+  const a=await this.load(),r=a.find(x=>x.id===id);
+  if(r){r.memo=t;await this.add(r)}
+},
+async count(){
+  return new Promise((ok)=>{
+    const tx=H.db.transaction('walks','readonly');
+    const req=tx.objectStore('walks').count();
+    req.onsuccess=()=>ok(req.result);
+    req.onerror=()=>ok(0);
+  });
+},
+async render(){
+  const a=await this.load(),el=$('hl');
   if(!a.length){el.innerHTML='<div class="he">NO DATA</div>';return}
   el.innerHTML=a.map(r=>`
     <div class="hc" data-sh="${r.id}">
@@ -280,70 +391,52 @@ render(){
         <span class="hc-arr">›</span>
       </div>
     </div>`).join('');
-  el.querySelectorAll('[data-d]').forEach(b=>b.onclick=(e)=>{e.stopPropagation();H.del(b.dataset.d);H.render()});
-  el.querySelectorAll('[data-sh]').forEach(card=>card.onclick=()=>{
-    const r=this.load().find(x=>x.id===card.dataset.sh);
+  el.querySelectorAll('[data-d]').forEach(b=>b.onclick=async(e)=>{e.stopPropagation();await H.del(b.dataset.d);await H.render()});
+  el.querySelectorAll('[data-sh]').forEach(card=>card.onclick=async()=>{
+    const r=(await H.load()).find(x=>x.id===card.dataset.sh);
     if(r)openHistDet(r);
   });
 }};
 
 // ── エクスポート / インポート ──
 const IO={
-  // JSON形式でデータをダウンロード
-  export(){
-    const records=H.load();
+  async export(){
+    const records=await H.load();
     if(!records.length){toast('NO DATA');return;}
-    const payload={
-      version:1,
-      exported:new Date().toISOString(),
-      count:records.length,
-      records
-    };
+    const payload={version:1,exported:new Date().toISOString(),count:records.length,records};
     const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
     const ts=new Date().toLocaleString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).replace(/[\/:]/g,'-').replace(/\s/g,'_');
-    a.href=url;a.download=`sanpath_${ts}.json`;
-    document.body.appendChild(a);a.click();
-    document.body.removeChild(a);URL.revokeObjectURL(url);
-    toast(`${records.length}件をエクスポート`);
+    await shareFile(blob,`sanpath_${ts}.json`);
+    toast(`${records.length} EXPORTED`);
   },
-  // JSONファイルを読み込んでマージ（IDが重複するものはスキップ）
   import(file){
     if(!file)return;
     const reader=new FileReader();
-    reader.onload=e=>{
+    reader.onload=async e=>{
       try{
         const data=JSON.parse(e.target.result);
-        // バージョン1形式またはレガシー配列形式に対応
         const incoming=Array.isArray(data)?data:(data.records||[]);
-        if(!incoming.length){toast('データなし');return;}
-        const existing=H.load();
+        if(!incoming.length){toast('NO DATA');return;}
+        const existing=await H.load();
         const existIds=new Set(existing.map(r=>r.id));
         const newRecs=incoming.filter(r=>r&&r.id&&!existIds.has(r.id));
-        if(!newRecs.length){toast('追加できる新規データなし');return;}
-        // 新しいものを先頭にマージして保存
-        const merged=[...existing,...newRecs]
-          .sort((a,b)=>String(b.id).localeCompare(String(a.id)))
-          .slice(0,50);
-        H.save(merged);
-        H.render();
-        updateHistCount();
-        renderAllHistRoutes();
-        toast(`${newRecs.length}件を追加（計${merged.length}件）`);
-      }catch(err){
-        toast('読み込みエラー: JSONが不正です');
-      }
+        if(!newRecs.length){toast('NO NEW DATA');return;}
+        for(const r of newRecs)await H.add(r);
+        await H.render();
+        await updateHistCount();
+        await renderAllHistRoutes();
+        toast(`${newRecs.length} IMPORTED`);
+      }catch(err){toast('JSON ERROR')}
     };
     reader.readAsText(file,'UTF-8');
   }
 };
 
 // LOG一覧の件数表示を更新
-function updateHistCount(){
-  const n=H.load().length;
+async function updateHistCount(){
+  const n=await H.count();
   const el=$('hist-count');
-  if(el)el.textContent=n?`${n} / 50件`:'';
+  if(el)el.textContent=n?`${n}`:'';
 }
 
 // ── Tiles ──
@@ -360,24 +453,28 @@ vis:new Set,vm:[],ns:null,npl:null,nnm:null,lastG:0,
 startMk:null,endMk:null,
 spdCol:false,spdSegs:[],
 recGraph:null,
+altF:new AF,elevG:new EG, // 標高フィルタ・累積
+altCol:false,altSegs:[],  // 標高ヒートマップ
 histLayers:[],    // 過去経路のトーンダウン表示レイヤー
 _lastPosTime:null,// バックグラウンドギャップ検出用
 // ── SHOW ON MAP モード ──
 mapHistMode:false,   // 現在マップ閲覧モードか
 mapHistLayers:[],    // 表示中の経路レイヤー
 mapHistId:null,      // 表示中の履歴ID
-mapHistHm:false      // 閲覧モードのヒートマップ状態
+mapHistHm:false,
+mapHistAhm:false
 };
 
 // 履歴詳細ビュー状態
-const HD={map:null,segs:[],routeLayer:null,currentId:null,hm:false};
+const HD={map:null,segs:[],routeLayer:null,currentId:null,hm:false,ahm:false};
 
 // ── マップ初期化 ──
 function initMap(lat,lon){
   A.map=L.map('map',{center:[lat,lon],zoom:17,zoomControl:false,attributionControl:true});
   setT('std');L.control.zoom({position:'topright'}).addTo(A.map);
   const zc=document.querySelector('.leaflet-top.leaflet-right');
-  if(zc)$('b-c').style.top=(zc.offsetTop+zc.offsetHeight+6)+'px';else $('b-c').style.top='60px';
+  const satPx=isNative?48:0;
+  if(zc)$('b-c').style.top=(zc.offsetTop+zc.offsetHeight+6)+'px';else $('b-c').style.top=(satPx+60)+'px';
   const ic=L.divIcon({className:'',html:'<div style="width:10px;height:10px;background:#4ade80;border:2px solid #fff;border-radius:50%;box-shadow:0 0 8px rgba(74,222,128,.4)"></div>',iconSize:[10,10],iconAnchor:[5,5]});
   A.um=L.marker([lat,lon],{icon:ic,zIndexOffset:1000}).addTo(A.map);
   A.uc=L.circle([lat,lon],{radius:20,color:'rgba(74,222,128,.2)',fillColor:'rgba(74,222,128,.05)',weight:1}).addTo(A.map);
@@ -388,11 +485,11 @@ function setT(k){const t=TL[k];if(!t)return;if(A.tl)A.map.removeLayer(A.tl);A.tl
 function uGPS(a){$('gps').style.display='';$('gps-t').textContent=`${round(a)}m`;$('gps-dot').style.background=a<=15?'var(--g)':a<=30?'#ca8':'#c44'}
 
 // ── 全過去経路をトーンダウン表示（現在記録中の経路は除く） ──
-function renderAllHistRoutes(){
+async function renderAllHistRoutes(){
   if(!A.map)return;
   A.histLayers.forEach(l=>A.map.removeLayer(l));
   A.histLayers=[];
-  H.load().forEach(r=>{
+  (await H.load()).forEach(r=>{
     if(r.path&&r.path.length>1){
       const ll=r.path.map(p=>[p[0],p[1]]);
       A.histLayers.push(
@@ -418,6 +515,25 @@ function addSpdSeg(lat1,lon1,lat2,lon2,kmh){
   A.spdSegs.push(seg);
 }
 function clearSpdSegs(){A.spdSegs.forEach(s=>A.map.removeLayer(s));A.spdSegs=[]}
+
+// ── 標高カラーセグメント ──
+function addAltSeg(lat1,lon1,lat2,lon2,alt,mn,mx){
+  if(!A.altCol)return;
+  const seg=L.polyline([[lat1,lon1],[lat2,lon2]],{color:alt2col(alt,mn,mx),weight:3,opacity:.7}).addTo(A.map);
+  A.altSegs.push(seg);
+}
+function clearAltSegs(){A.altSegs.forEach(s=>A.map.removeLayer(s));A.altSegs=[]}
+function rebuildAltSegs(){
+  clearAltSegs();
+  const alts=A.wc.map(p=>p[3]).filter(v=>v!=null);
+  if(alts.length<2)return;
+  const mn=Math.min(...alts),mx=Math.max(...alts);
+  for(let i=1;i<A.wc.length;i++){
+    const a=A.wc[i-1],b=A.wc[i],alt=b[3];
+    if(alt==null)continue;
+    A.altSegs.push(L.polyline([[a[0],a[1]],[b[0],b[1]]],{color:alt2col(alt,mn,mx),weight:3,opacity:.7}).addTo(A.map));
+  }
+}
 
 // A.wcの速度データから速度セグメントを全再構築
 function rebuildSpdSegs(){
@@ -456,12 +572,14 @@ async function go(mode){
   A.t0=Date.now();A.tv=setInterval(uTime,1000);
   A.wc=[];A.wl.setLatLngs([]);A.td=0;A.jc=0;A.vis.clear();
   A.vm.forEach(m=>A.map.removeLayer(m));A.vm=[];
-  clearSpdSegs();
+  clearSpdSegs();clearAltSegs();
   if(A.startMk)A.map.removeLayer(A.startMk);if(A.endMk)A.map.removeLayer(A.endMk);A.startMk=A.endMk=null;
-  $('s-d').textContent='0';$('s-j').textContent='0';$('s-t').textContent='0:00';$('s-sp').textContent='-';
+  $('s-d').textContent='0';$('s-j').textContent='0';$('s-t').textContent='0:00';$('s-sp').textContent='-';$('s-al').textContent='-';
   A._lastPosTime=null;
+  A.altF=new AF;A.elevG=new EG;
   placeStart(A.fp.lat,A.fp.lon);
   A._recPassedJct=new Set;A._lastJctCheck=0;
+  startAltFetcher();
 
   if(mode==='rand'){$('hud').classList.add('on');
     const n=A.g.near(A.fp.lat,A.fp.lon);if(!n){toast('NO JCT');return}
@@ -469,22 +587,75 @@ async function go(mode){
   }else{$('hud').classList.add('on');$('h-dir').textContent='REC';$('h-dir').style.color='var(--dm)';$('h-sub').textContent='';V.say('REC START','Recording')}
 }
 function rstBtn(){$('b-r').textContent='? RAND';$('b-w').textContent='+ REC';$('b-r').disabled=false;$('b-w').disabled=false}
-function stop(){
+async function stop(){
   const dur=A.t0?fT(floor((Date.now()-A.t0)/1000)):'0:00';
   if(A.fp)placeEnd(A.fp.lat,A.fp.lon);
-  // 速度データ付きで保存 [lat,lon,kmh]
-  H.add({id:Date.now().toString(36)+round(rnd()*1e4).toString(36),
+  stopAltFetcher();
+
+  // ── 標高の一括線形補間 ──
+  // APIで取得した値(non-null)の間のnullポイントを補間
+  const wc=A.wc;
+  // 既知の標高ポイントのインデックスを収集
+  const known=[];
+  for(let i=0;i<wc.length;i++){if(wc[i][3]!=null)known.push(i)}
+  if(known.length>=2){
+    // 先頭のnull群を最初の既知値で埋める
+    for(let i=0;i<known[0];i++)wc[i][3]=wc[known[0]][3];
+    // 末尾のnull群を最後の既知値で埋める
+    for(let i=known[known.length-1]+1;i<wc.length;i++)wc[i][3]=wc[known[known.length-1]][3];
+    // 既知値間のnullを線形補間
+    for(let k=0;k<known.length-1;k++){
+      const i0=known[k],i1=known[k+1];
+      const v0=wc[i0][3],v1=wc[i1][3];
+      for(let i=i0+1;i<i1;i++){
+        const t=(i-i0)/(i1-i0);
+        wc[i][3]=+(v0+(v1-v0)*t).toFixed(1);
+      }
+    }
+  }else if(known.length===1){
+    // 1つしかない場合は全ポイントに同じ値
+    for(let i=0;i<wc.length;i++)wc[i][3]=wc[known[0]][3];
+  }
+
+  // 標高指標を再計算（補間後のデータで）
+  const alts=wc.map(p=>p[3]).filter(v=>v!=null);
+  let elev=null;
+  if(alts.length>1){
+    const eg=new EG(1);alts.forEach(a=>eg.upd(a));
+    elev={corrected:true,source:'GSI',
+      gain:round(eg.gain),loss:round(eg.loss),
+      max:round(Math.max(...alts)),min:round(Math.min(...alts)),
+      start:round(alts[0]),end:round(alts[alts.length-1]),
+      correctedPath:null};
+  }
+
+  // パス圧縮
+  let savePath=wc.map(p=>[
+    +p[0].toFixed(5),+p[1].toFixed(5),
+    p[2]!=null?+p[2].toFixed(1):0,
+    p[3]!=null?+p[3].toFixed(1):null,
+    p[4]||0
+  ]);
+  // ダウンサンプリング（10000ポイント超なら間引く）
+  if(savePath.length>10000){
+    const n=Math.ceil(savePath.length/10000);
+    const ds=[savePath[0]];
+    for(let i=n;i<savePath.length-1;i+=n)ds.push(savePath[i]);
+    ds.push(savePath[savePath.length-1]);
+    savePath=ds;
+  }
+  await H.add({id:Date.now().toString(36)+round(rnd()*1e4).toString(36),
     date:new Date().toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}),
     dist:round(A.td),junc:A.jc,dur,
-    path:A.wc.slice(0,500),  // [lat,lon,kmh] 形式で保存
-    memo:'',mode:A.mode});
+    path:savePath,
+    memo:'',mode:A.mode,elev});
   A.st='IDLE';if(A.tv)clearInterval(A.tv);if(A.si)clearInterval(A.si);
   [A.pl,A.nm,A.npl,A.nnm].forEach(x=>{if(x)A.map.removeLayer(x)});A.pl=A.nm=A.npl=A.nnm=A.ns=null;
   A.jm.forEach(m=>A.map.removeLayer(m));A.jm=[];A.vm.forEach(m=>A.map.removeLayer(m));A.vm=[];A.vis.clear();A.cf=A.cs=null;
   uiIdle();rstBtn();if(A.manual)$('tap').style.display='';
   V.say(`${round(A.td)}m`,`${round(A.td)} meters`);BG.release();
   toast(`${round(A.td)}m / ${dur}`);
-  renderAllHistRoutes(); // 停止後に過去経路を再描画（今回分も含む）
+  await renderAllHistRoutes();
 }
 
 // ── Rand routing ──
@@ -534,13 +705,13 @@ if(A.swd<20||!A.cs)return;if(d2p(lat,lon,A.cs.co)<50)return;
 const skip=new Set([A.ci,A.ti,A.cf]);if(A.ns)skip.add(A.ns.t);
 for(const nid of A.g.IX){if(skip.has(nid))continue;const nd=A.g.N.get(nid);if(!nd)continue;if(hav(lat,lon,nd.lat,nd.lon)<25){A.st='ARR';onD(nid,now);return}}}
 
-// ── GPS位置更新 (修正版) ──
-// A.wc は [lat, lon, kmh] で管理
-function onPos(rl,ro,acc){
+// ── GPS位置更新 ──
+// A.wc は [lat, lon, kmh, alt, elapsedSec] で管理 (altはAPI取得、初期null)
+function onPos(rl,ro,acc,alt){
   const now=Date.now();
   if(now-A.lastG<600)return;
   A.lastG=now;
-  const gapMs=A._lastPosTime?(now-A._lastPosTime):0;
+  const eSec=A.t0?round((now-A.t0)/1000):0;
 
   // シミュレーション/マニュアルモード
   if(A.sim||A.manual){
@@ -552,12 +723,12 @@ function onPos(rl,ro,acc){
         A.td+=d;A.swd+=d;$('s-d').textContent=round(A.td);
         const dt=(now-(A._lastPosTime||now))*0.001,kmh=dt>0?d/dt*3.6:0;
         $('s-sp').textContent=isFinite(kmh)?kmh.toFixed(1):'-';
-        A.wc.push([rl,ro,kmh]);
+        A.wc.push([rl,ro,kmh,null,eSec]);
         if(A.spdCol)addSpdSeg(l[0],l[1],rl,ro,kmh);
-        else A.wl.addLatLng([rl,ro]);
+        else if(!A.altCol)A.wl.addLatLng([rl,ro]);
       }
     } else {
-      A.wc.push([rl,ro,0]);
+      A.wc.push([rl,ro,0,null,eSec]);
     }
     A._lastPosTime=now;
     if(A.st==='WALK'){if(A.mode==='rand')uDir();if(A.mode==='rec')chkRecJct(rl,ro);chk(rl,ro,now,true);A.map.panTo([rl,ro],{animate:true,duration:.3})}
@@ -565,7 +736,6 @@ function onPos(rl,ro,acc){
   }
 
   // 通常GPSモード
-  // WALK中はバックグラウンドで精度が落ちるため閾値を大幅緩和
   acc=acc||100;uGPS(acc);if(acc>(A.st==='WALK'?200:80))return;
   const f=A.kf.upd(rl,ro,acc,now);
   A.fp={lat:f.lat,lon:f.lon};
@@ -573,35 +743,71 @@ function onPos(rl,ro,acc){
   A.sd.add(f.lat,f.lon,now);
   const mv=A.sd.mov();
   const l=A.wc[A.wc.length-1];
-
-  // WALK中は移動判定を使わず常に追加（バックグラウンド安定性優先）
   const allowAdd=A.st==='WALK'||mv;
 
   if(allowAdd&&l){
     const d=hav(l[0],l[1],f.lat,f.lon);
-    // WALK中は上限を500mに拡大（バックグラウンドでの大きな位置飛びに対応）
     const dMax=A.st==='WALK'?500:30;
     if(d>2&&d<dMax){
       A.td+=d;A.swd+=d;$('s-d').textContent=round(A.td);
       const dt=(now-(A._lastPosTime||now))/1000;
-      // 60秒超のギャップ後は速度0にして異常値を防ぐ
       const kmh=(dt>0&&dt<60)?d/dt*3.6:0;
       $('s-sp').textContent=kmh>0?kmh.toFixed(1):'-';
-      A.wc.push([f.lat,f.lon,kmh]);
+      A.wc.push([f.lat,f.lon,kmh,null,eSec]);
       if(A.spdCol)addSpdSeg(l[0],l[1],f.lat,f.lon,kmh);
-      else A.wl.addLatLng([f.lat,f.lon]);
+      else if(!A.altCol)A.wl.addLatLng([f.lat,f.lon]);
     }
   } else if(!l&&A.st==='WALK'){
-    A.wc.push([f.lat,f.lon,0]);
-    if(!A.spdCol)A.wl.addLatLng([f.lat,f.lon]);
+    A.wc.push([f.lat,f.lon,0,null,eSec]);
+    if(!A.spdCol&&!A.altCol)A.wl.addLatLng([f.lat,f.lon]);
   } else if(!l){
-    A.wc.push([f.lat,f.lon,0]);
+    A.wc.push([f.lat,f.lon,0,null,eSec]);
   }
   A._lastPosTime=now;
   if(A.st==='WALK'){if(A.mode==='rand')uDir();if(A.mode==='rec')chkRecJct(f.lat,f.lon);chk(f.lat,f.lon,now,mv);A.map.panTo([f.lat,f.lon],{animate:true,duration:.5})}
 }
 
-function startSim(seg){if(A.si)clearInterval(A.si);let i=0;const co=seg.co;A.si=setInterval(()=>{i++;if(i>=co.length){clearInterval(A.si);A.si=null;onPos(co[co.length-1].lat,co[co.length-1].lon);return}const a=co[i-1],b=co[i];let s=0;const mi=setInterval(()=>{s++;const t=s/5;onPos(a.lat+(b.lat-a.lat)*t,a.lon+(b.lon-a.lon)*t);if(s>=5)clearInterval(mi)},6)},120)}
+// ── リアルタイム標高APIフェッチャー ──
+// 8秒間隔で現在地の標高を国土地理院APIから取得
+// 取得時にnullの過去ポイントをバックフィル（線形補間）
+let _altFetchTimer=null,_altFetchBusy=false,_altLastDist=0,_altLastIdx=-1,_altLastVal=null;
+function startAltFetcher(){
+  _altLastDist=0;_altLastIdx=-1;_altLastVal=null;
+  _altFetchTimer=setInterval(async()=>{
+    if(!A.fp||A.st!=='WALK'||_altFetchBusy)return;
+    if(A.td-_altLastDist<5)return;
+    _altFetchBusy=true;
+    try{
+      const res=await fetch(`https://cyberjapandata2.gsi.go.jp/general/dem/scripts/getelevation.php?lon=${A.fp.lon}&lat=${A.fp.lat}&outtype=JSON`);
+      const d=await res.json();
+      if(d.elevation!=null&&d.elevation!=='-----'){
+        const elv=parseFloat(d.elevation);
+        const curIdx=A.wc.length-1;
+        // バックフィル: 前回取得ポイント〜今回の間のnullポイントを線形補間
+        if(_altLastIdx>=0&&_altLastVal!=null&&curIdx>_altLastIdx){
+          const span=curIdx-_altLastIdx;
+          for(let i=_altLastIdx+1;i<=curIdx;i++){
+            if(A.wc[i]&&A.wc[i][3]==null){
+              const t=(i-_altLastIdx)/span;
+              A.wc[i][3]=+(_altLastVal+(elv-_altLastVal)*t).toFixed(1);
+            }
+          }
+        }else if(curIdx>=0){
+          // 初回: 現在のポイントに書き込み
+          A.wc[curIdx][3]=elv;
+        }
+        _altLastIdx=curIdx;_altLastVal=elv;
+        A.elevG.upd(elv);
+        $('s-al').textContent=round(elv)+'m';
+        _altLastDist=A.td;
+      }
+    }catch(e){}
+    _altFetchBusy=false;
+  },8000);
+}
+function stopAltFetcher(){if(_altFetchTimer){clearInterval(_altFetchTimer);_altFetchTimer=null}}
+
+function startSim(seg){if(A.si)clearInterval(A.si);let i=0;const co=seg.co;A.si=setInterval(()=>{i++;if(i>=co.length){clearInterval(A.si);A.si=null;onPos(co[co.length-1].lat,co[co.length-1].lon,null,null);return}const a=co[i-1],b=co[i];let s=0;const mi=setInterval(()=>{s++;const t=s/5;onPos(a.lat+(b.lat-a.lat)*t,a.lon+(b.lon-a.lon)*t,null,null);if(s>=5)clearInterval(mi)},6)},120)}
 function uTime(){if(!A.t0)return;$('s-t').textContent=fT(floor((Date.now()-A.t0)/1000))}
 
 // ── SHOW ON MAP: 経路をメインマップで全画面閲覧 ──
@@ -644,6 +850,7 @@ function showRouteOnMainMap(r){
   // 詳細ビューから新規に入る場合のみ、ミニマップのヒートマップ状態を引き継ぐ
   // ≡経由でLOG一覧から別の回に切り替える場合は現在のA.mapHistHmを維持
   if(!wasAlreadyInMapHistMode) A.mapHistHm=HD.hm;
+  if(!wasAlreadyInMapHistMode) A.mapHistAhm=HD.ahm;
   // 履歴パネルを閉じる（#bar は非表示のまま）
   $('hist').classList.remove('open');
   // 詳細ビューをリセット（ミニマップの破棄）
@@ -653,6 +860,7 @@ function showRouteOnMainMap(r){
   drawMapHistRoute(r,A.mapHistHm);
   // ボタン状態を同期
   $('map-hist-hm-btn').classList.toggle('von',A.mapHistHm);
+  $('map-hist-ahm-btn').classList.toggle('von',A.mapHistAhm);
   // 情報ラベル
   $('map-hist-info').textContent=`${r.date} · ${r.dist}m`;
   // マップ閲覧バーを表示（#bar は引き続き非表示）
@@ -671,26 +879,31 @@ function exitMapHistMode(){
 
 // ── 履歴詳細ビュー ──
 function openHistDet(r){
-  HD.currentId=r.id;HD.hm=false;
+  HD.currentId=r.id;HD.hm=false;HD.ahm=false;
   $('hd-title').textContent=r.date;
   const hasSpd=r.path&&r.path.length>0&&r.path[0].length>2;
+  const ev=r.elev;
+  const elevHtml=ev?`<div class="hc-s" style="margin-top:4px">ALT ↑<b>${ev.gain}</b>m ↓<b>${ev.loss}</b>m &nbsp; ${ev.min}-${ev.max}m &nbsp; <span style="font-size:8px;color:var(--dm)">[${ev.corrected?ev.source:'GPS'}]</span></div>`:'';
   $('hd-info').innerHTML=
     `<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
        <span class="hc-tag ${r.mode==='rand'?'r':'w'}">${r.mode==='rand'?'RAND':'REC'}</span>
        ${hasSpd?'':'<span style="font-size:8px;color:var(--dm);letter-spacing:.05em">NO SPEED DATA</span>'}
      </div>
-     <div class="hc-s"><b>${r.dist}</b>m &nbsp;&nbsp; ${r.dur} &nbsp;&nbsp; <b>${r.junc}</b> jct</div>`;
+     <div class="hc-s"><b>${r.dist}</b>m &nbsp;&nbsp; ${r.dur} &nbsp;&nbsp; <b>${r.junc}</b> jct</div>${elevHtml}`;
   $('hd-memo').value=r.memo||'';
   $('hd-hm').classList.remove('von');
+  $('hd-ahm').classList.remove('von');
   $('hist-det').classList.add('open');
 
-  // トランジション完了後にミニマップを初期化
+  // トランジション完了後にミニマップ+標高プロファイル初期化
   setTimeout(()=>{
     if(HD.map){HD.map.remove();HD.map=null;HD.segs=[];HD.routeLayer=null;}
     HD.map=L.map('hd-map',{zoomControl:false,attributionControl:false,dragging:true,scrollWheelZoom:false,touchZoom:true});
     L.tileLayer(TL['dark'].u,{maxZoom:TL['dark'].z}).addTo(HD.map);
     renderHdRoute(r,false);
     HD.map.invalidateSize();
+    drawPaceProfile(r);
+    drawElevProfile(r);
   },280);
 }
 
@@ -736,11 +949,11 @@ function closeHistDet(){
 }
 
 // ── 履歴パネル開閉 ──
-function openHist(){
-  H.render();
-  updateHistCount();
+async function openHist(){
+  await H.render();
+  await updateHistCount();
   $('hist').classList.add('open');
-  $('bar').style.display='none'; // 記録コントロールを隠す
+  $('bar').style.display='none';
 }
 function closeHist(){
   // マップ閲覧モード中なら経路も片付ける
@@ -754,16 +967,238 @@ function closeHist(){
   $('bar').style.display=''; // 記録コントロールを戻す
 }
 
+// ══════ Phase E: 標高プロファイル描画 ══════
+function drawElevProfile(r){
+  const canvas=$('hd-prof');
+  const lbl=$('hd-prof-label');
+  const ll=$('hd-prof-l'),lr=$('hd-prof-r');
+  if(!r||!r.path||r.path.length<2){canvas.style.display='none';lbl.style.display='none';return}
+
+  // 標高データ取得 (補正済み優先)
+  const ev=r.elev;
+  let alts;
+  if(ev&&ev.correctedPath&&ev.correctedPath.length===r.path.length){
+    alts=ev.correctedPath;
+  }else{
+    alts=r.path.map(p=>p.length>3?p[3]:null);
+  }
+  const validAlts=alts.map((a,i)=>a!=null?{i,a}:null).filter(Boolean);
+  if(validAlts.length<2){canvas.style.display='none';lbl.style.display='none';return}
+
+  // 累積距離を計算
+  const cumDist=[0];
+  for(let i=1;i<r.path.length;i++){
+    cumDist.push(cumDist[i-1]+hav(r.path[i-1][0],r.path[i-1][1],r.path[i][0],r.path[i][1]));
+  }
+  const totalDist=cumDist[cumDist.length-1];
+  const mn=ev?ev.min:round(Math.min(...validAlts.map(v=>v.a)));
+  const mx=ev?ev.max:round(Math.max(...validAlts.map(v=>v.a)));
+  const range=mx-mn||1;
+
+  canvas.style.display='block';lbl.style.display='flex';
+  const dpr=window.devicePixelRatio||1;
+  const w=canvas.clientWidth*dpr,h=canvas.clientHeight*dpr;
+  canvas.width=w;canvas.height=h;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,w,h);
+  const pad={t:8*dpr,b:4*dpr,l:2*dpr,r:2*dpr};
+  const pw=w-pad.l-pad.r,ph=h-pad.t-pad.b;
+
+  // 全ポイントのxy座標
+  const pts=[];
+  for(let i=0;i<r.path.length;i++){
+    const a=alts[i];
+    if(a==null)continue;
+    const x=pad.l+(totalDist>0?cumDist[i]/totalDist:i/(r.path.length-1))*pw;
+    const y=pad.t+ph-(a-mn)/range*ph;
+    pts.push({x,y,a});
+  }
+  if(pts.length<2)return;
+
+  // 塗りつぶし
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x,pad.t+ph);
+  pts.forEach(p=>ctx.lineTo(p.x,p.y));
+  ctx.lineTo(pts[pts.length-1].x,pad.t+ph);
+  ctx.closePath();
+  ctx.fillStyle='rgba(74,222,128,0.12)';ctx.fill();
+
+  // ライン
+  ctx.beginPath();
+  pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+  ctx.strokeStyle=ev&&ev.corrected?'#4ade80':'rgba(74,222,128,0.5)';
+  ctx.lineWidth=1.5*dpr;
+  if(!ev||!ev.corrected)ctx.setLineDash([3*dpr,3*dpr]);
+  ctx.stroke();ctx.setLineDash([]);
+
+  // ラベル
+  ll.textContent=`${mn}m`;
+  lr.textContent=`${mx}m`;
+}
+
+// ══════ ペースプロファイル描画 ══════
+function drawPaceProfile(r){
+  const canvas=$('hd-pace');
+  const lbl=$('hd-pace-label');
+  const pl=$('hd-pace-l'),pr=$('hd-pace-r');
+  if(!r||!r.path||r.path.length<3){canvas.style.display='none';lbl.style.display='none';return}
+
+  // 速度データ取得
+  const speeds=r.path.map(p=>p.length>2?p[2]:null);
+  const validSpds=speeds.filter(v=>v!=null&&v>0);
+  if(validSpds.length<2){canvas.style.display='none';lbl.style.display='none';return}
+
+  // 累積距離
+  const cumDist=[0];
+  for(let i=1;i<r.path.length;i++){
+    cumDist.push(cumDist[i-1]+hav(r.path[i-1][0],r.path[i-1][1],r.path[i][0],r.path[i][1]));
+  }
+  const totalDist=cumDist[cumDist.length-1];
+  const mnS=Math.min(...validSpds),mxS=Math.max(...validSpds);
+  const rangeS=mxS-mnS||1;
+
+  canvas.style.display='block';lbl.style.display='flex';
+  const dpr=window.devicePixelRatio||1;
+  const w=canvas.clientWidth*dpr,h=canvas.clientHeight*dpr;
+  canvas.width=w;canvas.height=h;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,w,h);
+  const pad={t:8*dpr,b:4*dpr,l:2*dpr,r:2*dpr};
+  const pw=w-pad.l-pad.r,ph=h-pad.t-pad.b;
+
+  // ポイント座標
+  const pts=[];
+  for(let i=0;i<r.path.length;i++){
+    const s=speeds[i];
+    if(s==null||s<=0)continue;
+    const x=pad.l+(totalDist>0?cumDist[i]/totalDist:i/(r.path.length-1))*pw;
+    const y=pad.t+ph-(s-mnS)/rangeS*ph;
+    pts.push({x,y,s});
+  }
+  if(pts.length<2)return;
+
+  // 塗りつぶし（HSLグラデーション）
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x,pad.t+ph);
+  pts.forEach(p=>ctx.lineTo(p.x,p.y));
+  ctx.lineTo(pts[pts.length-1].x,pad.t+ph);
+  ctx.closePath();
+  ctx.fillStyle='rgba(100,180,255,0.1)';ctx.fill();
+
+  // 速度に応じた色でセグメント描画
+  ctx.lineWidth=1.5*dpr;
+  for(let i=1;i<pts.length;i++){
+    ctx.beginPath();
+    ctx.moveTo(pts[i-1].x,pts[i-1].y);
+    ctx.lineTo(pts[i].x,pts[i].y);
+    ctx.strokeStyle=spd2col(pts[i].s);
+    ctx.stroke();
+  }
+
+  // ラベル
+  pl.textContent=`${mnS.toFixed(1)}km/h`;
+  pr.textContent=`${mxS.toFixed(1)}km/h`;
+}
+
+// ══════ Phase F: CSV出力 ══════
+async function exportCSV(r){
+  if(!r||!r.path||!r.path.length){toast('NO DATA');return}
+  const ev=r.elev;
+  const hasCorr=ev&&ev.correctedPath&&ev.correctedPath.length===r.path.length;
+  // 累積距離
+  const cumDist=[0];
+  for(let i=1;i<r.path.length;i++){
+    cumDist.push(cumDist[i-1]+hav(r.path[i-1][0],r.path[i-1][1],r.path[i][0],r.path[i][1]));
+  }
+  // ヘッダコメント
+  const lines=[
+    `# Sanpath Walk Record`,
+    `# Date: ${r.date}`,
+    `# Mode: ${r.mode==='rand'?'RAND':'REC'}`,
+    `# Distance: ${r.dist}m`,
+    `# Duration: ${r.dur}`,
+    `# Junctions: ${r.junc}`,
+  ];
+  if(ev){
+    lines.push(`# Elevation Gain: ${ev.gain}m (${ev.corrected?ev.source:'GPS'})`);
+    lines.push(`# Elevation Loss: ${ev.loss}m (${ev.corrected?ev.source:'GPS'})`);
+    lines.push(`# Elevation Range: ${ev.min}-${ev.max}m`);
+  }
+  lines.push(`# Points: ${r.path.length}`);
+  lines.push('index,lat,lon,speed_kmh,altitude_gps_m,altitude_corrected_m,distance_cumulative_m,time_elapsed_s');
+
+  for(let i=0;i<r.path.length;i++){
+    const p=r.path[i];
+    const lat=p[0].toFixed(5);
+    const lon=p[1].toFixed(5);
+    const spd=p.length>2&&p[2]!=null?p[2].toFixed(1):'';
+    const altGps=p.length>3&&p[3]!=null?p[3].toFixed(1):'';
+    const altCorr=hasCorr&&ev.correctedPath[i]!=null?ev.correctedPath[i].toFixed(1):'';
+    const dist=round(cumDist[i]);
+    const sec=p.length>4&&p[4]!=null?p[4]:'';
+    lines.push(`${i},${lat},${lon},${spd},${altGps},${altCorr},${dist},${sec}`);
+  }
+
+  const blob=new Blob([lines.join('\n')],{type:'text/csv;charset=utf-8'});
+  const ts=r.date.replace(/[\/:]/g,'-').replace(/\s/g,'_');
+  await shareFile(blob,`sanpath_${ts}.csv`);
+  toast(`CSV ${r.path.length} pts`);
+}
+
+// ══════ 標高ヒートマップ for 履歴詳細 ══════
+function renderHdRouteAlt(r){
+  if(!HD.map||!r.path||r.path.length<2)return;
+  HD.segs.forEach(s=>HD.map.removeLayer(s));HD.segs=[];
+  if(HD.routeLayer){HD.map.removeLayer(HD.routeLayer);HD.routeLayer=null}
+  const ev=r.elev;
+  const alts=ev&&ev.correctedPath?ev.correctedPath:r.path.map(p=>p.length>3?p[3]:null);
+  const valid=alts.filter(v=>v!=null);
+  if(valid.length<2){toast('NO ALT DATA');return}
+  const mn=Math.min(...valid),mx=Math.max(...valid);
+  const ll=r.path.map(p=>[p[0],p[1]]);
+  for(let i=1;i<r.path.length;i++){
+    const alt=alts[i];if(alt==null)continue;
+    HD.segs.push(L.polyline([[r.path[i-1][0],r.path[i-1][1]],[r.path[i][0],r.path[i][1]]],{color:alt2col(alt,mn,mx),weight:3,opacity:.8}).addTo(HD.map));
+  }
+  // start/end markers
+  if(ll.length>0){
+    const sIc=L.divIcon({className:'',html:'<div style="width:8px;height:8px;border-radius:50%;border:2px solid #4ade80;background:transparent"></div>',iconSize:[8,8],iconAnchor:[4,4]});
+    HD.segs.push(L.marker(ll[0],{icon:sIc,interactive:false}).addTo(HD.map));
+    if(ll.length>1){const eIc=L.divIcon({className:'',html:'<div style="width:8px;height:8px;border-radius:50%;background:#4ade80"></div>',iconSize:[8,8],iconAnchor:[4,4]});
+    HD.segs.push(L.marker(ll[ll.length-1],{icon:eIc,interactive:false}).addTo(HD.map))}
+  }
+  if(ll.length>1)HD.map.fitBounds(L.latLngBounds(ll).pad(.15));
+}
+
+// ── GPS Start/Stop (Native vs Web) ──
+async function startGPS(){
+  if(isNative&&BGL){
+    bglWatcherId=await BGL.addWatcher(
+      {backgroundMessage:'Sanpath: tracking',backgroundTitle:'Sanpath',requestPermissions:true,stale:false,distanceFilter:3},
+      function(loc,err){if(err){if(err.code==='NOT_AUTHORIZED'&&confirm('Location permission required'))BGL.openSettings();return}
+        onPos(loc.latitude,loc.longitude,loc.accuracy,loc.altitude);}
+    );
+  }else{
+    A.wid=navigator.geolocation.watchPosition(gpsC,()=>{},{enableHighAccuracy:true,maximumAge:1000,timeout:10000});
+  }
+}
+async function stopGPS(){
+  if(isNative&&BGL&&bglWatcherId!=null){await BGL.removeWatcher({id:bglWatcherId});bglWatcherId=null}
+  if(A.wid!=null){navigator.geolocation.clearWatch(A.wid);A.wid=null}
+}
+
 // ── Boot ──
 function initM(lat,lon){A.manual=true;A.fp={lat,lon};initMap(lat,lon);A.map.setZoom(16);$('tap').style.display='';$('ld').classList.add('gone');A.st='READY';
 A.map.on('click',e=>{A.fp={lat:e.latlng.lat,lon:e.latlng.lng};A.um.setLatLng(e.latlng);A.uc.setLatLng(e.latlng);A.map.panTo(e.latlng);$('tap').style.display='none'})}
 async function boot(){const lt=$('lt');
+// IndexedDB初期化 + localStorageからのマイグレーション
+try{await H.init();await H.migrate()}catch(e){console.error('DB init failed',e)}
 if(!('geolocation' in navigator)||(typeof window.isSecureContext!=='undefined'&&!window.isSecureContext)){lt.textContent='NO GPS';manFB();return}
 lt.textContent='GPS...';
 try{const p=await new Promise((ok,ng)=>{let best=null,ba=1e4,n=0;const w=navigator.geolocation.watchPosition(p=>{n++;const a=p.coords.accuracy;lt.textContent=`${round(a)}m (${n})`;if(a<ba){ba=a;best=p}if(a<=30||n>=8){navigator.geolocation.clearWatch(w);ok(best||p)}},e=>{navigator.geolocation.clearWatch(w);ng(e)},{enableHighAccuracy:true,maximumAge:0,timeout:15000});setTimeout(()=>{navigator.geolocation.clearWatch(w);best?ok(best):ng(Error('t'))},16000)});
 const lat=p.coords.latitude,lon=p.coords.longitude,acc=p.coords.accuracy;
 A.kf.upd(lat,lon,acc,Date.now());A.fp={lat,lon};initMap(lat,lon);uGPS(acc);
-A.wid=navigator.geolocation.watchPosition(p=>onPos(p.coords.latitude,p.coords.longitude,p.coords.accuracy),()=>{},{enableHighAccuracy:true,maximumAge:1000,timeout:10000});
+startGPS();
 $('ld').classList.add('gone');A.st='READY'}catch(e){lt.textContent='GPS FAIL';manFB()}}
 function manFB(){const p=$('lt').parentElement;
 const r=document.createElement('div');r.className='lr';r.textContent='HTTPS / PERMISSION REQUIRED';p.appendChild(r);
@@ -771,8 +1206,8 @@ const b=document.createElement('button');b.className='lb';b.textContent='MANUAL 
 const rb=document.createElement('button');rb.className='lb2';rb.textContent='RETRY';rb.onclick=()=>{r.remove();b.remove();rb.remove();$('lt').textContent='...';boot()};p.appendChild(rb)}
 
 // ── イベントハンドラ ──
-$('b-r').onclick=()=>{if(!A.wid&&!A.sim&&!A.manual)A.sim=true;$('tap').style.display='none';go('rand')};
-$('b-w').onclick=()=>{if(!A.wid&&!A.sim&&!A.manual)A.sim=true;$('tap').style.display='none';go('rec')};
+$('b-r').onclick=()=>{if(!A.wid&&!bglWatcherId&&!A.sim&&!A.manual)A.sim=true;$('tap').style.display='none';go('rand')};
+$('b-w').onclick=()=>{if(!A.wid&&!bglWatcherId&&!A.sim&&!A.manual)A.sim=true;$('tap').style.display='none';go('rec')};
 $('b-s').onclick=stop;
 document.querySelectorAll('.tb').forEach(b=>b.onclick=()=>setT(b.dataset.t));
 $('b-v').onclick=function(){if(V.on){V.disable();this.textContent='V';this.classList.remove('von')}else{V.enable();this.textContent='V';this.classList.add('von')}};
@@ -780,27 +1215,58 @@ $('b-h').onclick=openHist;
 $('hx').onclick=closeHist;
 $('b-c').onclick=()=>{if(A.fp&&A.map)A.map.setView([A.fp.lat,A.fp.lon],17,{animate:true})};
 
-// 速度カラートグル: 既存のA.wcデータから全セグメントを再構築
+// 速度カラートグル（標高と排他）
 $('b-sc').onclick=function(){
   A.spdCol=!A.spdCol;this.classList.toggle('von',A.spdCol);
+  // 排他: 標高をOFF
+  if(A.spdCol&&A.altCol){A.altCol=false;clearAltSegs();$('b-ac').classList.remove('von')}
   if(!A.spdCol){
     clearSpdSegs();
-    // A.wcのlat/lonのみ使って緑ラインを復元
     A.wl.setLatLngs(A.wc.map(p=>[p[0],p[1]]));
   } else {
     A.wl.setLatLngs([]);
-    rebuildSpdSegs(); // A.wcの速度データから全区間を色付き再描画
+    rebuildSpdSegs();
+  }
+};
+// 標高カラートグル（速度と排他）
+$('b-ac').onclick=function(){
+  A.altCol=!A.altCol;this.classList.toggle('von',A.altCol);
+  // 排他: 速度をOFF
+  if(A.altCol&&A.spdCol){A.spdCol=false;clearSpdSegs();$('b-sc').classList.remove('von')}
+  if(!A.altCol){
+    clearAltSegs();
+    A.wl.setLatLngs(A.wc.map(p=>[p[0],p[1]]));
+  } else {
+    A.wl.setLatLngs([]);
+    rebuildAltSegs();
   }
 };
 
 // 履歴詳細イベント
 $('hd-back').onclick=closeHistDet;
-$('hd-hm').onclick=function(){
-  const r=H.load().find(x=>x.id===HD.currentId);
+// 速度ヒートマップ（標高と排他）
+$('hd-hm').onclick=async function(){
+  const r=(await H.load()).find(x=>x.id===HD.currentId);
   if(!r||!r.path||!r.path.length)return;
   if(!r.path[0]||r.path[0].length<3){toast('NO SPEED DATA');return;}
   HD.hm=!HD.hm;this.classList.toggle('von',HD.hm);
-  renderHdRoute(r,HD.hm);
+  if(HD.hm&&HD.ahm){HD.ahm=false;$('hd-ahm').classList.remove('von')}
+  if(HD.hm)renderHdRoute(r,true);
+  else renderHdRoute(r,false);
+};
+// 標高ヒートマップ（速度と排他）
+$('hd-ahm').onclick=async function(){
+  const r=(await H.load()).find(x=>x.id===HD.currentId);
+  if(!r||!r.path||!r.path.length)return;
+  HD.ahm=!HD.ahm;this.classList.toggle('von',HD.ahm);
+  if(HD.ahm&&HD.hm){HD.hm=false;$('hd-hm').classList.remove('von')}
+  if(HD.ahm)renderHdRouteAlt(r);
+  else renderHdRoute(r,false);
+};
+// CSV出力
+$('hd-csv').onclick=async function(){
+  const r=(await H.load()).find(x=>x.id===HD.currentId);
+  if(r) await exportCSV(r);
 };
 $('hd-memo').onblur=function(){if(HD.currentId)H.memo(HD.currentId,this.value)};
 
@@ -810,31 +1276,53 @@ $('h-imp-btn').onclick=()=>$('h-imp-file').click();
 $('h-imp-file').onchange=function(){IO.import(this.files[0]);this.value='';};
 
 // SHOW ON MAP ボタン: 詳細ビュー → メインマップ閲覧モード
-$('hd-showmap').onclick=function(){
-  const r=H.load().find(x=>x.id===HD.currentId);
+$('hd-showmap').onclick=async function(){
+  const r=(await H.load()).find(x=>x.id===HD.currentId);
   if(r)showRouteOnMainMap(r);
 };
 
 // マップ閲覧バーのイベント
-// ヒートマップトグル (マップ閲覧モード中)
-$('map-hist-hm-btn').onclick=function(){
-  const r=H.load().find(x=>x.id===A.mapHistId);
+// 速度ヒートマップ（標高と排他）
+$('map-hist-hm-btn').onclick=async function(){
+  const r=(await H.load()).find(x=>x.id===A.mapHistId);
   if(!r||!r.path||!r.path.length)return;
   if(!r.path[0]||r.path[0].length<3){toast('NO SPEED DATA');return;}
-  A.mapHistHm=!A.mapHistHm;
-  this.classList.toggle('von',A.mapHistHm);
-  drawMapHistRoute(r,A.mapHistHm);
+  A.mapHistHm=!A.mapHistHm;this.classList.toggle('von',A.mapHistHm);
+  if(A.mapHistHm&&A.mapHistAhm){A.mapHistAhm=false;$('map-hist-ahm-btn').classList.remove('von')}
+  if(A.mapHistHm)drawMapHistRoute(r,true);
+  else drawMapHistRoute(r,false);
+};
+// 標高ヒートマップ（速度と排他）
+$('map-hist-ahm-btn').onclick=async function(){
+  const r=(await H.load()).find(x=>x.id===A.mapHistId);
+  if(!r||!r.path||!r.path.length)return;
+  A.mapHistAhm=!A.mapHistAhm;this.classList.toggle('von',A.mapHistAhm);
+  if(A.mapHistAhm&&A.mapHistHm){A.mapHistHm=false;$('map-hist-hm-btn').classList.remove('von')}
+  if(A.mapHistAhm){
+    // 標高ヒートマップ描画
+    clearMapHistLayers();
+    const ev=r.elev;
+    const alts=ev&&ev.correctedPath?ev.correctedPath:r.path.map(p=>p.length>3?p[3]:null);
+    const valid=alts.filter(v=>v!=null);
+    if(valid.length<2){toast('NO ALT DATA');A.mapHistAhm=false;this.classList.remove('von');return}
+    const mn=Math.min(...valid),mx=Math.max(...valid);
+    const ll=r.path.map(p=>[p[0],p[1]]);
+    for(let i=1;i<r.path.length;i++){
+      const alt=alts[i];if(alt==null)continue;
+      A.mapHistLayers.push(L.polyline([[r.path[i-1][0],r.path[i-1][1]],[r.path[i][0],r.path[i][1]]],{color:alt2col(alt,mn,mx),weight:3.5,opacity:.85}).addTo(A.map));
+    }
+    if(ll.length>0){const sIc=L.divIcon({className:'',html:'<div style="width:12px;height:12px;border-radius:50%;border:2.5px solid #4ade80;background:transparent"></div>',iconSize:[12,12],iconAnchor:[6,6]});A.mapHistLayers.push(L.marker(ll[0],{icon:sIc,interactive:false,zIndexOffset:500}).addTo(A.map));if(ll.length>1){const eIc=L.divIcon({className:'',html:'<div style="width:10px;height:10px;border-radius:50%;background:#4ade80"></div>',iconSize:[10,10],iconAnchor:[5,5]});A.mapHistLayers.push(L.marker(ll[ll.length-1],{icon:eIc,interactive:false,zIndexOffset:500}).addTo(A.map))}}
+  }else drawMapHistRoute(r,false);
 };
 
 // ≡ ボタン (マップ閲覧モード中): LOG一覧を開く
 // 経路はマップ上に残し、ヒストパネルを手前に表示
 // 別の回の「SHOW ON MAP」を選択すれば切り替え可能
 // × で完全終了（通常の地図画面へ）
-$('map-hist-log-btn').onclick=function(){
-  $('map-hist-bar').style.display='none'; // バーを隠してLOG一覧をフルスクリーンに
-  H.render();
+$('map-hist-log-btn').onclick=async function(){
+  $('map-hist-bar').style.display='none';
+  await H.render();
   $('hist').classList.add('open');
-  // #bar は非表示のまま維持（mapHistMode=true が closeHist で検知される）
 };
 
 boot();
